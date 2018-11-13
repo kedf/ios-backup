@@ -1,12 +1,15 @@
 from __future__ import division, print_function
+
 import argparse
 import errno
+import os
 import platform  # TODO: use sys instead
 import sqlite3
-from shutil import copyfile, move
-import os
+import sys
 from os.path import expanduser, isdir, join, basename
 from pprint import pprint
+from shutil import copyfile, move
+
 
 
 def mkdir_p(path):
@@ -31,6 +34,8 @@ def get_backup_paths():
             itunes_bak_path = expanduser('~/AppData/Roaming/Apple Computer/MobileSync/Backup/')
     elif platform.system().lower() == 'darwin':
         itunes_bak_path = expanduser('~/Library/Application Support/MobileSync/Backup/')
+    elif sys.platform == "linux":
+        itunes_bak_path = input("Enter the path of the iTunes backup folder: ")
     else:
         raise Exception("Can't detect system")
 
@@ -83,7 +88,7 @@ def main(args=None):
         print('Preparing directories')
         i = 0
         for dom, rpath in c.execute('SELECT domain,relativePath FROM Files WHERE flags=2'):
-            print('{:.2%}'.format(i/count), end='\r')
+            print('{:.2%}'.format(i / count), end='\r')
             mkdir_p(join(dom, rpath))
             i += 1
         print('Done')
@@ -96,7 +101,7 @@ def main(args=None):
         fails = open('fails.txt', mode='w+')
         i = 0
         for file, dom, rpath in c.execute('SELECT fileID,domain,relativePath FROM Files WHERE flags=1'):
-            file_to = join(dom, rpath)
+            file_to = join(dom, rpath).encode('utf8')
             try:
                 file_from = join(backup_path, file[:2], file)
                 if not args.copy:
@@ -108,7 +113,7 @@ def main(args=None):
                 print(e)
                 print(file_from, file=fails)
 
-            print('{:.2%} of {}, {}'.format(i/count, count, file_to), end='\r')
+            print ('{:.2%} of {}, {}'.format(i / count, count, file_to), end='\r')
             i += 1
         print('Done')
         print('Be sure to check fails.txt')
@@ -116,6 +121,7 @@ def main(args=None):
         fails.close()
         c.close()
         conn.close()
+
 
 if __name__ == '__main__':
     main()
